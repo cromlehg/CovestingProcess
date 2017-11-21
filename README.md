@@ -1,6 +1,6 @@
 ![CovestingTest](logo.png "CovestingTest")
 
-# Vestarin smart contract
+# Covesting smart contract test
 
 * _Standart_        : ERC20
 * _Name_            : Covesting
