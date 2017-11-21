@@ -766,7 +766,7 @@ contract UpdateMainsale is CommonSale {
         Stage storage stage = stages[stageIndex];
 
         token.mint(this, _tokensE18);
-        token.transfer(msg.sender, _tokensE18);
+        token.transfer(_buyer, _tokensE18);
         totalTokensMinted = totalTokensMinted.add(_tokensE18);
         totalExternalSales++;
 
