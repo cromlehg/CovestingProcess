@@ -632,3 +632,252 @@ contract Configurator is Ownable {
 
 }
 
+contract UpdateMainsale is CommonSale {
+
+    enum Currency { BTC, LTC, ZEC, DASH, WAVES, USD, EUR }
+
+    event ExternalSale(
+        Currency _currency,
+        bytes32 _txIdSha3,
+        address indexed _buyer,
+        uint256 _amountWei,
+        uint256 _tokensE18
+    );
+
+    event NotifierChanged(
+        address indexed _oldAddress,
+        address indexed _newAddress
+    );
+
+    // Address that can this crowdsale about changed external conditions.
+    address public notifier;
+
+    // currency_code => (sha3_of_tx_id => tokens_e18)
+    mapping(uint8 => mapping(bytes32 => uint256)) public externalTxs;
+
+    // Total amount of external contributions (BTC, LTC, USD, etc.) during this crowdsale.
+    uint256 public totalExternalSales = 0;
+
+    modifier canNotify() {
+        require(msg.sender == owner || msg.sender == notifier);
+        _;
+    }
+
+    // ----------------
+
+    address public foundersTokensWallet;
+
+    address public bountyTokensWallet;
+
+    uint public foundersTokensPercent;
+
+    uint public bountyTokensPercent;
+
+    uint public percentRate = 100;
+
+    uint public lockPeriod;
+
+    function setLockPeriod(uint newLockPeriod) public onlyOwner {
+        lockPeriod = newLockPeriod;
+    }
+
+    function setFoundersTokensPercent(uint newFoundersTokensPercent) public onlyOwner {
+        foundersTokensPercent = newFoundersTokensPercent;
+    }
+
+    function setBountyTokensPercent(uint newBountyTokensPercent) public onlyOwner {
+        bountyTokensPercent = newBountyTokensPercent;
+    }
+
+    function setFoundersTokensWallet(address newFoundersTokensWallet) public onlyOwner {
+        foundersTokensWallet = newFoundersTokensWallet;
+    }
+
+    function setBountyTokensWallet(address newBountyTokensWallet) public onlyOwner {
+        bountyTokensWallet = newBountyTokensWallet;
+    }
+
+    function finishMinting() public whenNotPaused onlyOwner {
+        uint summaryTokensPercent = bountyTokensPercent + foundersTokensPercent;
+        uint mintedTokens = token.totalSupply();
+        uint summaryFoundersTokens = mintedTokens.mul(summaryTokensPercent).div(percentRate - summaryTokensPercent);
+        uint totalSupply = summaryFoundersTokens + mintedTokens;
+        uint foundersTokens = totalSupply.mul(foundersTokensPercent).div(percentRate);
+        uint bountyTokens = totalSupply.mul(bountyTokensPercent).div(percentRate);
+        token.mint(this, foundersTokens);
+        token.lock(foundersTokensWallet, lockPeriod * 1 days);
+        token.transfer(foundersTokensWallet, foundersTokens);
+        token.mint(this, bountyTokens);
+        token.transfer(bountyTokensWallet, bountyTokens);
+        totalTokensMinted = totalTokensMinted.add(foundersTokens).add(bountyTokens);
+        token.finishMinting();
+    }
+
+    //----------------------------------------------------------------------
+    // Begin of external sales.
+
+    function setNotifier(address _notifier) public onlyOwner {
+        NotifierChanged(notifier, _notifier);
+        notifier = _notifier;
+    }
+
+    function externalSales(
+        uint8[] _currencies,
+        bytes32[] _txIdSha3,
+        address[] _buyers,
+        uint256[] _amountsWei,
+        uint256[] _tokensE18
+    ) public whenNotPaused canNotify {
+
+        require(_currencies.length > 0);
+        require(_currencies.length == _txIdSha3.length);
+        require(_currencies.length == _buyers.length);
+        require(_currencies.length == _amountsWei.length);
+        require(_currencies.length == _tokensE18.length);
+
+        for (uint i = 0; i < _txIdSha3.length; i++) {
+            _externalSaleSha3(
+                Currency(_currencies[i]),
+                _txIdSha3[i],
+                _buyers[i],
+                _amountsWei[i],
+                _tokensE18[i]
+            );
+        }
+    }
+
+    function _externalSaleSha3(
+        Currency _currency,
+        bytes32 _txIdSha3, // To get bytes32 use keccak256(txId) OR sha3(txId)
+        address _buyer,
+        uint256 _amountWei,
+        uint256 _tokensE18
+    ) internal {
+
+        require(_buyer > 0 && _amountWei > 0 && _tokensE18 > 0);
+
+        var txsByCur = externalTxs[uint8(_currency)];
+
+        // If this foreign transaction has been already processed in this contract.
+        require(txsByCur[_txIdSha3] == 0);
+        txsByCur[_txIdSha3] = _tokensE18;
+
+        uint stageIndex = currentStage();
+        Stage storage stage = stages[stageIndex];
+
+        token.mint(this, _tokensE18);
+        token.transfer(msg.sender, _tokensE18);
+        totalTokensMinted = totalTokensMinted.add(_tokensE18);
+        totalExternalSales++;
+
+        totalInvested = totalInvested.add(_amountWei);
+        stage.invested = stage.invested.add(_amountWei);
+        if (stage.invested >= stage.hardcap) {
+            stage.closed = now;
+        }
+
+        ExternalSale(_currency, _txIdSha3, _buyer, _amountWei, _tokensE18);
+    }
+
+    // Get id of currency enum. --------------------------------------------
+
+    function btcId() public constant returns (uint8) {
+        return uint8(Currency.BTC);
+    }
+
+    function ltcId() public constant returns (uint8) {
+        return uint8(Currency.LTC);
+    }
+
+    function zecId() public constant returns (uint8) {
+        return uint8(Currency.ZEC);
+    }
+
+    function dashId() public constant returns (uint8) {
+        return uint8(Currency.DASH);
+    }
+
+    function wavesId() public constant returns (uint8) {
+        return uint8(Currency.WAVES);
+    }
+
+    function usdId() public constant returns (uint8) {
+        return uint8(Currency.USD);
+    }
+
+    function eurId() public constant returns (uint8) {
+        return uint8(Currency.EUR);
+    }
+
+    // Get token count by transaction id. ----------------------------------
+
+    function _tokensByTx(Currency _currency, string _txId) internal constant returns (uint256) {
+        return tokensByTx(uint8(_currency), _txId);
+    }
+
+    function tokensByTx(uint8 _currency, string _txId) public constant returns (uint256) {
+        return externalTxs[_currency][keccak256(_txId)];
+    }
+
+    function tokensByBtcTx(string _txId) public constant returns (uint256) {
+        return _tokensByTx(Currency.BTC, _txId);
+    }
+
+    function tokensByLtcTx(string _txId) public constant returns (uint256) {
+        return _tokensByTx(Currency.LTC, _txId);
+    }
+
+    function tokensByZecTx(string _txId) public constant returns (uint256) {
+        return _tokensByTx(Currency.ZEC, _txId);
+    }
+
+    function tokensByDashTx(string _txId) public constant returns (uint256) {
+        return _tokensByTx(Currency.DASH, _txId);
+    }
+
+    function tokensByWavesTx(string _txId) public constant returns (uint256) {
+        return _tokensByTx(Currency.WAVES, _txId);
+    }
+
+    function tokensByUsdTx(string _txId) public constant returns (uint256) {
+        return _tokensByTx(Currency.USD, _txId);
+    }
+
+    function tokensByEurTx(string _txId) public constant returns (uint256) {
+        return _tokensByTx(Currency.EUR, _txId);
+    }
+
+    // End of external sales.
+    //----------------------------------------------------------------------
+}
+
+contract UpdateConfigurator is Ownable {
+
+    CovestingToken public token;
+
+    UpdateMainsale public mainsale;
+
+    function deploy() public onlyOwner {
+        mainsale = new UpdateMainsale();
+        token = CovestingToken(0xE2FB6529EF566a080e6d23dE0bd351311087D567);
+        mainsale.setToken(token);
+        mainsale.addStage(5000,200);
+        mainsale.addStage(5000,180);
+        mainsale.addStage(10000,170);
+        mainsale.addStage(20000,160);
+        mainsale.addStage(20000,150);
+        mainsale.addStage(40000,130);
+        mainsale.setMultisigWallet(0x15A071B83396577cCbd86A979Af7d2aBa9e18970);
+        mainsale.setFoundersTokensWallet(0x25ED4f0D260D5e5218D95390036bc8815Ff38262);
+        mainsale.setBountyTokensWallet(0x717bfD30f039424B049D918F935DEdD069B66810);
+        mainsale.setStart(1511528400);
+        mainsale.setPeriod(30);
+        mainsale.setLockPeriod(90);
+        mainsale.setMinPrice(100000000000000000);
+        mainsale.setFoundersTokensPercent(13);
+        mainsale.setBountyTokensPercent(5);
+        mainsale.setNotifier(owner);
+        mainsale.transferOwnership(owner);
+    }
+
+}
