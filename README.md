@@ -75,7 +75,7 @@ Maximum tokens can mint - 20 000 000 VST
 1. _Token_ - https://etherscan.io/token/0x21a16c2b16c3f0dc75d7ddf0bdd0f76ab26d148b
 2. _Presale_ - https://etherscan.io/address/0x313ef35a7d18633038c8c5f0c8df1a662991d1f1
 3. _Mainsale_ - https://etherscan.io/address/0x1c42086ac06a976d0b347b86320b86fe7859f8af
-4. _Updated mainsale_ - https://etherscan.io/token/0x528b165220A26565E00709cBaef7b88FC8600F81
+4. _Updated mainsale_ - https://etherscan.io/address/0x528b165220A26565E00709cBaef7b88FC8600F81
 
 ### Crowdsale stages
 
