@@ -93,7 +93,7 @@ Maximum tokens can mint - 20 000 000 VST
 * _Start_                      : Tue, 21 Nov 2017 00:00:00 GMT
 * _Wallet_                     : 0x15A071B83396577cCbd86A979Af7d2aBa9e18970
 * _Contract owner_             : 0xEA15Adb66DC92a4BbCcC8Bf32fd25E2e86a2A770
-* _Notifier_                   : 0x8D5bd2aBa04A07Bfa0cc976C73eD45B23cC6D6a2
+* _Notifier_                   : 0xEA15Adb66DC92a4BbCcC8Bf32fd25E2e86a2A770
 
 _Milestones_
 1. hardcap  5000 ETH, price 200 COV per ETH
