@@ -1,0 +1,13 @@
+gs
+target
+/.classpath
+/.settings
+project/project
+project/target
+/.bin
+/bin/
+/.project
+/.cache-main
+/.cache-tests
+/dev/mysql/shadow_*.sql
+/src/main/resources/application.conf
