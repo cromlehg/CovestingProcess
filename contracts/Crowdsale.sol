@@ -881,3 +881,57 @@ contract UpdateConfigurator is Ownable {
     }
 
 }
+
+contract IncreaseTokensOperator is Ownable {
+
+  using SafeMath for uint256;
+
+  mapping (address => bool) public authorized;
+
+  CovestingToken public token;
+
+  uint public increaseK = 10;
+
+  modifier onlyAuthorized() {
+    require(owner == msg.sender || authorized[msg.sender]);
+    _;
+  }
+
+  function extraMint(address tokenHolder) public onlyAuthorized {
+    uint value = token.balanceOf(tokenHolder);
+    uint targetValue = value.mul(increaseK);
+    uint diffValue = targetValue.sub(value);
+    token.mint(this, diffValue);
+    token.transfer(tokenHolder, diffValue);
+  }
+
+  function extraMintArray(address[] tokenHolders) public onlyAuthorized {
+    for(uint i = 0; i < tokenHolders.length; i++) {
+      address tokenHolder = tokenHolders[i];
+      uint value = token.balanceOf(tokenHolder);
+      uint targetValue = value.mul(increaseK);
+      uint diffValue = targetValue.sub(value);
+      token.mint(this, diffValue);
+      token.transfer(tokenHolder, diffValue);      
+    }
+  }
+
+  function setIncreaseK(uint newIncreaseK) public onlyOwner {
+    increaseK = newIncreaseK;
+  }
+
+  function setToken(address newToken) public onlyOwner {
+    token = CovestingToken(newToken);
+  }
+
+  function authorize(address to) public onlyAuthorized {
+    require(!authorized[to]);
+    authorized[to] = true;
+  }
+
+  function unauthorize(address to) public onlyAuthorized {
+    require(authorized[to]);
+    authorized[to] = false;
+  }
+
+}
