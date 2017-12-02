@@ -587,22 +587,22 @@ contract Configurator is Ownable {
 
   CovestingToken public token; 
 
-  Presale public presale;
+  //Presale public presale;
 
   Mainsale public mainsale;
 
   function deploy() public onlyOwner {
     token = new CovestingToken();
 
-    presale = new Presale();
+/*    presale = new Presale();
 
     presale.setToken(token);
     presale.addStage(5000,300);
-    presale.setMultisigWallet(0x6245C05a6fc205d249d0775769cfE73CB596e57D);
+    presale.setMultisigWallet(0xb8600b335332724Df5108Fc0595002409c2ADbC6);
     presale.setStart(1508504400);
     presale.setPeriod(30);
     presale.setMinPrice(100000000000000000);
-    token.setSaleAgent(presale);	
+    token.setSaleAgent(presale);	*/
 
     mainsale = new Mainsale();
 
@@ -613,7 +613,7 @@ contract Configurator is Ownable {
     mainsale.addStage(20000,160);
     mainsale.addStage(20000,150);
     mainsale.addStage(40000,130);
-    mainsale.setMultisigWallet(0x15A071B83396577cCbd86A979Af7d2aBa9e18970);
+    mainsale.setMultisigWallet(0xb8600b335332724Df5108Fc0595002409c2ADbC6);
     mainsale.setFoundersTokensWallet(0x25ED4f0D260D5e5218D95390036bc8815Ff38262);
     mainsale.setBountyTokensWallet(0x717bfD30f039424B049D918F935DEdD069B66810);
     mainsale.setStart(1511222400);
@@ -623,10 +623,10 @@ contract Configurator is Ownable {
     mainsale.setFoundersTokensPercent(13);
     mainsale.setBountyTokensPercent(5);
 
-    presale.setMainsale(mainsale);
+    //presale.setMainsale(mainsale);
 
     token.transferOwnership(owner);
-    presale.transferOwnership(owner);
+    //presale.transferOwnership(owner);
     mainsale.transferOwnership(owner);
   }
 
@@ -859,7 +859,7 @@ contract UpdateConfigurator is Ownable {
 
     function deploy() public onlyOwner {
         mainsale = new UpdateMainsale();
-        token = CovestingToken(0xE2FB6529EF566a080e6d23dE0bd351311087D567);
+        token = CovestingToken(0x9804cc353A155D6d3526047da0fCbA73eeabA73B);
         mainsale.setToken(token);
         mainsale.addStage(5000,200);
         mainsale.addStage(5000,180);
@@ -867,7 +867,7 @@ contract UpdateConfigurator is Ownable {
         mainsale.addStage(20000,160);
         mainsale.addStage(20000,150);
         mainsale.addStage(40000,130);
-        mainsale.setMultisigWallet(0x15A071B83396577cCbd86A979Af7d2aBa9e18970);
+        mainsale.setMultisigWallet(0xb8600b335332724Df5108Fc0595002409c2ADbC6);
         mainsale.setFoundersTokensWallet(0x25ED4f0D260D5e5218D95390036bc8815Ff38262);
         mainsale.setBountyTokensWallet(0x717bfD30f039424B049D918F935DEdD069B66810);
         mainsale.setStart(1511528400);
@@ -888,10 +888,6 @@ contract IncreaseTokensOperator is Ownable {
 
   mapping (address => bool) public authorized;
 
-  mapping (address => bool) public minted;
-
-  address[] public mintedList;
-
   CovestingToken public token;
 
   uint public increaseK = 10;
@@ -907,21 +903,16 @@ contract IncreaseTokensOperator is Ownable {
     uint diffValue = targetValue.sub(value);
     token.mint(this, diffValue);
     token.transfer(tokenHolder, diffValue);
-    minted[tokenHolder] = true;
-    mintedList.push(tokenHolder);
   }
 
   function extraMintArray(address[] tokenHolders) public onlyAuthorized {
     for(uint i = 0; i < tokenHolders.length; i++) {
       address tokenHolder = tokenHolders[i];
-      require(!minted[tokenHolder]);
       uint value = token.balanceOf(tokenHolder);
       uint targetValue = value.mul(increaseK);
       uint diffValue = targetValue.sub(value);
       token.mint(this, diffValue);
       token.transfer(tokenHolder, diffValue);      
-      minted[tokenHolder] = true;
-      mintedList.push(tokenHolder);
     }
   }
 

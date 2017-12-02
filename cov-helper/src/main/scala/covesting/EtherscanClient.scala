@@ -12,14 +12,14 @@ class TokenHolder(val address: String) {
 
 }
 
-class EtherscanClient(override val logger: Logger, proxyPropsOpt: Option[TraitProxyProperties])
+class EtherscanClient(val address: String, override val logger: Logger, proxyPropsOpt: Option[TraitProxyProperties])
   extends CommonClient(logger: Logger, proxyPropsOpt) {
 
   val addressPattern = """target='_parent'>(0x[\d\w]{40})<""".r
 
   val pagesCountPattern = """Page\s*<\s*b\s*>\s*\d+\s*<\s*\/b\s*>\s*of\s*<\s*b\s*>\s*(\d+)\s*<\s*\/\s*b\s*>\s*<\s*\/span\s*>""".r
 
-  val ETHERSCAN_URL = "https://etherscan.io/"
+  val ETHERSCAN_URL = address
 
   val ETHERSCAN_TOKEN_HOLDERS_URL = ETHERSCAN_URL + "token/generic-tokenholders2"
 
