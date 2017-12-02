@@ -892,13 +892,42 @@ contract IncreaseTokensOperator is Ownable {
 
   address[] public mintedList;
 
+  mapping (address => bool) public pending;
+
+  address[] public pendingList;
+
   CovestingToken public token;
 
   uint public increaseK = 10;
 
+  uint public index;
+
   modifier onlyAuthorized() {
     require(owner == msg.sender || authorized[msg.sender]);
     _;
+  }
+
+  function extraMintArrayPendingProcess(uint count) public onlyAuthorized {
+    for(uint i = 0; index < pendingList.length && i < count; i++) {
+      address tokenHolder = pendingList[index];
+      uint value = token.balanceOf(tokenHolder);
+      uint targetValue = value.mul(increaseK);
+      uint diffValue = targetValue.sub(value);
+      token.mint(this, diffValue);
+      token.transfer(tokenHolder, diffValue);
+      minted[tokenHolder] = true;
+      mintedList.push(tokenHolder);
+      index++;
+    }
+  }
+
+  function extraMintArrayPending(address[] tokenHolders) public onlyAuthorized {
+    for(uint i = 0; i < tokenHolders.length; i++) {
+      address tokenHolder = pendingList[i];
+      require(!pending[tokenHolder]);
+      pending[tokenHolder] = true;
+      pendingList.push(tokenHolder);
+    }
   }
 
   function extraMint(address tokenHolder) public onlyAuthorized {
